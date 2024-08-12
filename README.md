@@ -64,3 +64,8 @@ Easily start your Reactive RESTful Web Services
 Create your web page using Quarkus RESTEasy Reactive & Qute
 
 [Related guide section...](https://quarkus.io/guides/qute#type-safe-templates)
+
+
+### Build de l'image docker
+
+docker build -t code-frontend:1.0.0 --build-arg VERSION=1.0.0 .

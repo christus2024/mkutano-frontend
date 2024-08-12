@@ -1,0 +1,13 @@
+---
+services:
+  code-frontend:
+    image: christus/code-frontend:1.0.0
+    container_name: code-frontend
+    ports:
+      - 8080:8080
+    restart: always
+    networks:
+      - it4innov-lab
+networks:
+  it4innov-lab:
+    driver: bridge
