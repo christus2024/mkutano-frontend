@@ -68,4 +68,5 @@ Create your web page using Quarkus RESTEasy Reactive & Qute
 
 ### Build de l'image docker
 
-docker build -t code-frontend:1.0.0 --build-arg VERSION=1.0.0 .
+    docker build -t code-frontend:1.0.0 --build-arg VERSION=1.0.0-SNAPSHOT .
+    docker build -t code-frontend:1.0.0 --build-arg VERSION=1.0.0 .
