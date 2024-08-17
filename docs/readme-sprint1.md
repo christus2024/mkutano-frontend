@@ -24,8 +24,8 @@ Instalation sur linux:
 Installation sur windows:
 
 Generalement l'installation de git installe directement git-flow.
-Pour initialiser le git-flow sur notre projet il faut executer la commande 
-    
+Pour initialiser le git-flow sur notre projet il faut executer la commande
+
     git flow init
 
 Installation sur linux:
@@ -57,6 +57,10 @@ nous allons utiliser l'outils ssh-keygen en ligne de commande et nous allons uti
 
     ssh-keygen -t rsa -b 4096
 
+Il nous faudra ensuite donner les droits les plus restreints à ce fichier par sécurité et pour les exigences d’OpenSSH :
+
+    chmod 700 ~/.ssh -Rf
+
 deposer la clé public sur le serveur
 
 copier le contenu de la clé public generée dans le repertoire ~/.ssh/id_rsa.pub sur le serveur.
@@ -71,9 +75,7 @@ Si l'on dispose de plusieurs clé publics, on peut les rassembler en les copiant
 
     ssh-copy-id -i ~/.ssh/id_rsa_groupeServeurA.pub root@192.168.240.132
 
-Il nous faudra ensuite donner les droits les plus restreints à ce fichier par sécurité et pour les exigences d’OpenSSH :
 
-    chmod 700 ~/.ssh -Rf
 
 se connecter en ssh avec la clé privé et sans mot de passe
 
@@ -96,13 +98,10 @@ Par exemple, utiliser le port 2222, éditer /etc/ssh/sshd_config :
 Installation de docker sous windows: https://docs.docker.com/desktop/install/windows-install/
 
 Installer docker sur linux
-
-### Installation de docker
-
 Ajour des dépots mirroirs pour télécharger les dépendances et mise à jour du systeme
 
-    sudo apt-get update & sudo apt-get upgrade
-    sudo apt-get install ca-certificates curl  gnupg lsb-release
+    sudo apt-get update -y & sudo apt-get upgrade -y
+    sudo apt-get install ca-certificates curl  gnupg lsb-release -y
     sudo mkdir -p /etc/apt/keyrings
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
@@ -110,9 +109,9 @@ Ajour des dépots mirroirs pour télécharger les dépendances et mise à jour d
     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
     $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-    sudo apt-get update & sudo apt-get upgrade
+    sudo apt-get update -y & sudo apt-get upgrade -y
 
-    apt-get install docker-ce docker-ce-cli -y
+    sudo apt-get install docker-ce docker-ce-cli -y
 
 Pour tester l'installation de docker nous lancons le conteneur hello-world qui naturelement affiche hello world
 
@@ -136,6 +135,9 @@ La chaîne $USER remplace ici le nom de l’utilisateur à ajouter, à vous de l
 Par défaut, Docker Compose n'est inclus dans aucune des distributions Linux.
 Vous pouvez verifier la sortie de la commande docker-compose.
 
+sudo apt  install docker-compose
+
+ou alors
 Vous devrez donc le cas echeant télécharger son binaire depuis la page GitHub :
 
 Tout d'abord, téléchargez le binaire de Docker Compose à l'aide de la commande suivante :
@@ -312,12 +314,12 @@ Pour déployer nginx nous utilisons le conteneur nginx personnalisé dans le doc
 
     docker-compose -f docker-compose-nginx.yml up -d
 
-Verifier que le conteneur nginx est bien démarré 
-   
+Verifier que le conteneur nginx est bien démarré
+
      docker logs nginx 
 
 Verifier que les configurations de nginx ont bien été pris en compte
-    
+
     docker exec -it nginx nginx -t
 
 Pour aller en profondeur sur la configuration des reverse proxy avec nginx lire le readme-nginx.md
@@ -372,7 +374,7 @@ Afin de maitriser la redaction du docker-compose suivre le parcours suivant sur 
 
 Se placer à la racine du projet et executer la commande de build de l'image docker de notre µservice code-frontend
 
-    docker build -t christus/code-frontend:1.0.0 --build-arg VERSION=1.0.0 .
+    docker build -t code-frontend:1.0.0 --build-arg VERSION=1.0.0-SNAPSHOT .
 
 Afin de maitriser l'utilisation de docker suivre le parcours suivant sur docker: https://www.youtube.com/watch?v=CPS5yXzLBwQ&list=PLYXcqIV23kPnVvMDw1sGYzSBZW1RfDgkZ
 

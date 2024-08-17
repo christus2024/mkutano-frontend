@@ -8,10 +8,10 @@ services:
       - 443:443
     restart: always
     volumes:
-      - /var/nginx/conf.d:/etc/nginx/conf.d
-      - /var/nginx/certs:/etc/nginx/nginx-certs
-      - /var/nginx/data-site:/usr/share/nginx/html
-      - /var/nginx/log:/var/log/nginx/log
+      - ~/nginx/conf.d:/etc/nginx/conf.d
+      - ~/nginx/certs:/etc/nginx/nginx-certs
+      - ~/nginx/data-site:/usr/share/nginx/html
+      - ~/nginx/log:/var/log/nginx/log
     networks:
       - it4innov-lab
 networks:
