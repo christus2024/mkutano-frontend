@@ -8,12 +8,35 @@ services:
       - 443:443
     restart: always
     volumes:
-      - ~/nginx/conf.d:/etc/nginx/conf.d
-      - ~/nginx/certs:/etc/nginx/nginx-certs
-      - ~/nginx/data-site:/usr/share/nginx/html
-      - ~/nginx/log:/var/log/nginx/log
+      - conf_d:/etc/nginx/conf.d
+      - ~/nginx/certs:/etc/nginx/certs
+      - data_site:/usr/share/nginx/html
+       - logs:/var/log/nginx/log
     networks:
       - it4innov-lab
+      - it4innov-app
 networks:
   it4innov-lab:
     driver: bridge
+  it4innov-app:
+    driver: bridge
+
+volumes:
+  logs:
+    driver: local
+    driver_opts:
+      type: none
+      device: ~/nginx/logs
+      o: bind
+  conf_d:
+    driver: local
+    driver_opts:
+      type: none
+      device: ~/nginx/conf.d
+      o: bind
+  data_site:
+    driver: local
+    driver_opts:
+      type: none
+      device: ~/nginx/data_site
+      o: bind

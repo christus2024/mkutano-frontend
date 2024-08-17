@@ -7,7 +7,7 @@ services:
       - 8080:8080
     restart: always
     networks:
-      - it4innov-lab
+      - it4innov-app
 networks:
-  it4innov-lab:
+  it4innov-app:
     driver: bridge
