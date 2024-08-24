@@ -15,6 +15,7 @@
   </distributionManagement>
 
   <modelVersion>4.0.0</modelVersion>
+
   <groupId>org.it4innov</groupId>
   <artifactId>code-frontend</artifactId>
   <version>1.0.0-SNAPSHOT</version>
@@ -171,8 +172,143 @@
           </execution>
         </executions>
       </plugin>
+
+        <plugin>
+          <groupId>com.github.ekryd.echo-maven-plugin</groupId>
+          <artifactId>echo-maven-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>pre-clean</id>
+              <phase>pre-clean</phase>
+              <goals>
+                <goal>echo</goal>
+              </goals>
+              <configuration>
+                <message>In 'pre-clean'</message>
+              </configuration>
+            </execution>
+            <execution>
+              <id>clean</id>
+              <phase>clean</phase>
+              <goals>
+                <goal>echo</goal>
+              </goals>
+              <configuration>
+                <message>In 'clean'</message>
+              </configuration>
+            </execution>
+            <execution>
+              <id>post-clean</id>
+              <phase>post-clean</phase>
+              <goals>
+                <goal>echo</goal>
+              </goals>
+              <configuration>
+                <message>In 'post-clean'</message>
+              </configuration>
+            </execution>
+            <execution>
+              <id>pre-site</id>
+              <phase>pre-site</phase>
+              <goals>
+                <goal>echo</goal>
+              </goals>
+              <configuration>
+                <message>In 'pre-site'</message>
+              </configuration>
+            </execution>
+            <execution>
+              <id>site</id>
+              <phase>site</phase>
+              <goals>
+                <goal>echo</goal>
+              </goals>
+              <configuration>
+                <message>In 'site'</message>
+              </configuration>
+            </execution>
+            <execution>
+              <id>post-site</id>
+              <phase>post-site</phase>
+              <goals>
+                <goal>echo</goal>
+              </goals>
+              <configuration>
+                <message>In 'post-site'</message>
+              </configuration>
+            </execution>
+
+            <execution>
+              <id>validate</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>echo</goal>
+              </goals>
+              <configuration>
+                <message>In 'validate'</message>
+              </configuration>
+            </execution>
+            <execution>
+              <id>compile</id>
+              <phase>compile</phase>
+              <goals>
+                <goal>echo</goal>
+              </goals>
+              <configuration>
+                <message>In 'compile'</message>
+              </configuration>
+            </execution>
+            <execution>
+              <id>test</id>
+              <phase>test</phase>
+              <goals>
+                <goal>echo</goal>
+              </goals>
+              <configuration>
+                <message>In 'test'</message>
+              </configuration>
+            </execution>
+            <execution>
+              <id>package</id>
+              <phase>package</phase>
+              <goals>
+                <goal>echo</goal>
+              </goals>
+              <configuration>
+                <message>In 'package'</message>
+              </configuration>
+            </execution>
+            <execution>
+              <id>install</id>
+              <phase>install</phase>
+              <goals>
+                <goal>echo</goal>
+              </goals>
+              <configuration>
+                <message>In 'install'</message>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>com.github.ekryd.echo-maven-plugin</groupId>
+          <artifactId>echo-maven-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>deploy</id>
+              <phase>deploy</phase>
+              <goals>
+                <goal>echo</goal>
+              </goals>
+              <configuration>
+                <message>In 'deploy'</message>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
     </plugins>
   </build>
+
   <profiles>
     <profile>
       <id>native</id>
