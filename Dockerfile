@@ -7,7 +7,6 @@
 # EXPOSE 8080
 # ENTRYPOINT [ "java","-jar","/app/quarkus-run.jar" ]
 
-
 FROM eclipse-temurin:17-jre
 
 LABEL Author="it4innov.fr"
