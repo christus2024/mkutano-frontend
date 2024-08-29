@@ -1,3 +1,12 @@
+# FROM openjdk:17-jdk-alpine
+# WORKDIR /app
+# RUN addgroup -S frontgroup && adduser -S frontuser -G frontgroup
+# RUN chown -R frontuser:frontgroup /app
+# COPY target/code-frontend-1.0.0-SNAPSHOT-runner.jar /app/quarkus-run.jar
+# USER frontusercd 
+# EXPOSE 8080
+# ENTRYPOINT [ "java","-jar","/app/quarkus-run.jar" ]
+
 FROM eclipse-temurin:17-jre
 
 LABEL Author="it4innov.fr"
@@ -13,7 +22,7 @@ RUN apt-get update -y && \
 
 USER it4innov
 
-COPY --chown=it4innov:it4innov ./target/code-frontend-${VERSION}-runner.jar code-frontend.jar
+COPY --chown=it4innov:it4innov ./target/code-frontend-${VERSION}-SNAPSHOT-runner.jar /app/code-frontend.jar
 
 EXPOSE 8080
 
