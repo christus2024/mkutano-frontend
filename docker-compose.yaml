@@ -3,7 +3,7 @@ version: '3.8' # La version de la syntaxe de Docker Compose à utiliser
 services: # Déclaration des services qui composeront l'application
   app:  # Nom du service
     build: # Indique que Docker Compose doit construire l'image à partir d'un Dockerfile
-      context: . # Contexte de construction, généralement le répertoire actuel
+      context: . # Contexte de construction, généralement le répertoire actuel illustrer avec le " . "
       dockerfile: Dockerfile # Nom du Dockerfile à utiliser (optionnel si le nom est Dockerfile)
     ports: 
     # Interne:Externe
