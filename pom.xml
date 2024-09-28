@@ -124,37 +124,6 @@
         </configuration>
       </plugin>
       <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-deploy-plugin</artifactId>
-            <version>3.0.0-M1</version>
-            <executions>
-                <!-- Exécution spécifique pour déployer uniquement le runner.jar -->
-                <execution>
-                    <id>deploy-runner-jar</id>
-                    <phase>deploy</phase>
-                    <goals>
-                        <goal>deploy-file</goal>
-                    </goals>
-                    <configuration>
-                        <!-- Fichier à déployer, ici le runner.jar -->
-                        <file>${project.build.directory}/${project.artifactId}-runner.jar</file>
-                        <!-- Utilise l'ID du dépôt configuré dans le settings.xml -->
-                        <repositoryId>nexus</repositoryId>
-                        <!-- URL du dépôt (snapshot ou release) -->
-                        <url>${project.version.endsWith('-SNAPSHOT') 
-                            ? distributionManagement.snapshotRepository.url 
-                            : distributionManagement.repository.url}
-                        </url>
-                        <groupId>${project.groupId}</groupId>
-                        <artifactId>${project.artifactId}</artifactId>
-                        <version>${project.version}</version>
-                        <packaging>jar</packaging>
-                        <classifier>runner</classifier>
-                    </configuration>
-                </execution>
-            </executions>
-        </plugin>
-      <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${surefire-plugin.version}</version>
         <configuration>
