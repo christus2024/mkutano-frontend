@@ -1,0 +1,36 @@
+pipeline {
+    agent {
+                docker { image 'maven:3.9.3-eclipse-temurin-17'
+                args '-v $HOME/.m2:/root/.m2' }
+            }
+    stages {
+        stage('Checkout project') {
+
+            steps {
+
+                git branch: 'develop', url:'https://github.com/christus2024/mkutano-frontend.git'
+
+            }
+        }
+        stage('Test') {
+
+            steps {
+                sh 'mvn clean verify'
+            }
+        }
+         stage('Build') {
+
+            steps {
+                sh 'mvn package'
+            }
+        }
+        stage('archive') {
+
+            steps {
+                sh 'mvn deploy --settings ./.m2/settings.xml'
+
+
+            }
+        }
+    }
+}
