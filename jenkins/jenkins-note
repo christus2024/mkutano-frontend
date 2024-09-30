@@ -1,0 +1,560 @@
+
+Dans une **pipeline Jenkins**, plusieurs éléments sont utilisés pour automatiser les étapes de construction, de test et de déploiement d'applications. Parmi ces éléments, on trouve :
+
+1. **Jenkins Agent (ou Node)** :
+   - Un **agent Jenkins** est une machine (physique ou virtuelle) qui exécute les étapes de la pipeline définies par Jenkins. Jenkins fonctionne avec une architecture maître-agent où le maître coordonne les pipelines et délègue les tâches à des agents.
+   - Chaque agent peut être configuré pour exécuter des builds spécifiques, tester ou déployer une application, selon la configuration du projet. Cela permet de répartir la charge de travail sur plusieurs machines et d'adapter les environnements (par exemple, pour tester sur différents systèmes d'exploitation).
+   - Les agents peuvent être sur la même machine que Jenkins ou sur des machines distantes.
+
+2. **Build Tools (Outils de Build)** :
+   - Les **build tools** (outils de construction) sont des logiciels qui automatisent le processus de compilation et de packaging d'une application. Quelques exemples d'outils de build populaires sont :
+     - **Maven** pour les projets Java.
+     - **Gradle** pour Java ou d'autres langages.
+     - **npm** pour les projets JavaScript/Node.js.
+     - **Ant** pour des tâches de construction personnalisées.
+   - Dans une pipeline Jenkins, les build tools sont souvent intégrés pour gérer la compilation, la gestion des dépendances, la génération des artefacts (fichiers exécutables, libraries, etc.), et éventuellement la phase de test.
+   - Par exemple, une étape de pipeline pourrait utiliser Maven pour compiler un projet Java, télécharger ses dépendances et générer un fichier `.jar` ou `.war`.
+
+3. **Shared Libraries (Bibliothèques Partagées)** :
+   - Les **shared libraries** dans Jenkins sont des ensembles de scripts Groovy que l'on peut réutiliser dans différentes pipelines pour éviter la duplication du code.
+   - Elles permettent d'abstraire des fonctions et des étapes communes qui peuvent être utilisées par plusieurs projets ou pipelines. Cela favorise la modularité et la réutilisabilité dans les pipelines Jenkins.
+   - Par exemple, si vous avez plusieurs pipelines qui doivent exécuter des tests unitaires, déployer une application ou notifier des équipes via Slack, vous pouvez écrire ces actions une fois dans une shared library et les appeler dans différents pipelines.
+   - Les bibliothèques partagées sont stockées dans des dépôts Git et sont référencées dans les pipelines Jenkins par des annotations comme `@Library('nom-bibliothèque')`.
+
+### Résumé des différences :
+
+- **Agent Jenkins** : Une machine (ou un nœud) qui exécute des étapes de la pipeline sous la supervision du maître Jenkins.
+- **Build Tools** : Outils spécifiques utilisés dans la pipeline pour compiler, tester, packager et gérer les dépendances d'un projet (ex : Maven, npm).
+- **Shared Libraries** : Bibliothèques de code Groovy réutilisables pour éviter la duplication dans les pipelines Jenkins.
+
+Ensemble, ces éléments permettent à Jenkins de gérer des pipelines flexibles, évolutifs et réutilisables pour la gestion du cycle de vie des applications.
+
+
+
+
+
+Dans un **Jenkinsfile**, les concepts d'**environnement** et de **paramètres** jouent des rôles distincts mais complémentaires. Ils sont tous deux utilisés pour rendre une pipeline Jenkins plus flexible et dynamique, mais leur usage et leur portée diffèrent. Voici leurs définitions et différences :
+
+### 1. **Environnement (environment)** :
+   - Les **variables d'environnement** sont des paires clé-valeur qui contiennent des informations contextuelles ou de configuration pour le bon fonctionnement des étapes d'une pipeline Jenkins.
+   - Elles peuvent être définies globalement pour toute la durée de la pipeline ou localement pour une étape spécifique.
+   - Ces variables d'environnement peuvent contenir des informations comme les chemins, les configurations du système, les informations d'accès (tokens, identifiants), ou encore des valeurs dynamiques utilisées pendant l'exécution des jobs.
+   - Exemple dans un Jenkinsfile :
+     ```groovy
+     pipeline {
+       environment {
+         ENV_NAME = 'production'     // Variable d'environnement définie
+         API_KEY = credentials('my-api-key') // Utilisation d'une information sécurisée
+       }
+       stages {
+         stage('Build') {
+           steps {
+             echo "Building in environment: ${ENV_NAME}" // Accès à la variable d'environnement
+           }
+         }
+       }
+     }
+     ```
+    #### Exemples d'utilisation :
+      - **Lecture d'une variable d'environnement** :
+        ```groovy
+        echo "Le chemin de l'environnement est : ${env.PATH}"
+        ```
+      - **Définir une nouvelle variable d'environnement** :
+        ```groovy
+        env.MY_ENV_VAR = "my_value"
+        ```
+      Cela te permet de définir des valeurs qui peuvent être utilisées dans d'autres étapes ou entre différents jobs d'un pipeline.
+
+      #### Variables typiques disponibles :
+      - **`env.BUILD_ID`** : Identifiant unique de l'exécution du pipeline.
+      - **`env.JOB_NAME`** : Nom du job Jenkins.
+      - **`env.WORKSPACE`** : Chemin du répertoire de travail utilisé par Jenkins pour ce job.
+
+Les valeurs peuvent ensuite être accédées dans le pipeline via `params.MY_PARAM_NAME`.
+
+   - **Portée** :
+     - Les variables définies dans la section `environment` peuvent être utilisées dans toutes les étapes de la pipeline, ou seulement dans certaines parties si elles sont définies au sein d'un bloc spécifique.
+   - **Utilisation** :
+     - Elles sont souvent utilisées pour stocker des valeurs qui changent en fonction de l'environnement (ex: développement, production) ou pour garder des valeurs sensibles telles que les clés d'API ou les jetons d'accès.
+
+### 2. **Paramètres (parameters)** :
+   - Les **paramètres** dans Jenkins sont utilisés pour rendre les pipelines interactifs. Ils permettent de demander des informations à l'utilisateur avant de démarrer une exécution de pipeline.
+   - Les pipelines paramétrées permettent de personnaliser l'exécution en fonction de valeurs fournies par l'utilisateur au lancement du job. Ces valeurs peuvent être des chaînes de caractères, des booléens, des choix (drop-down), des fichiers, etc.
+   - Exemple dans un Jenkinsfile :
+     ```groovy
+     pipeline {
+       parameters {
+         string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Nom de la branche Git à builder')
+         booleanParam(name: 'DEPLOY', defaultValue: true, description: 'Déployer après le build ?')
+       }
+       stages {
+         stage('Build') {
+           steps {
+             echo "Building branch: ${params.BRANCH_NAME}" // Accès à un paramètre utilisateur
+           }
+         }
+       }
+     }
+     ```
+   - **Portée** :
+     - Les paramètres sont définis au début de la pipeline et sont accessibles tout au long de l'exécution, en utilisant l'objet `params` (ex: `params.BRANCH_NAME`).
+   - **Utilisation** :
+     - Les paramètres permettent d'adapter l'exécution de la pipeline à des conditions spécifiques, comme choisir une branche Git, définir des valeurs conditionnelles ou permettre à l'utilisateur de choisir des options avant de lancer le pipeline.
+
+### Différences clés entre **Environnement** et **Paramètres** :
+
+| Aspect                    | Environnement (`environment`)                                  | Paramètres (`parameters`)                                  |
+|----------------------------|---------------------------------------------------------------|------------------------------------------------------------|
+| **But principal**           | Définir des variables d'environnement pour l'exécution du job | Permettre à l'utilisateur de fournir des valeurs avant l'exécution du job |
+| **Définition**              | Clés/valeurs statiques ou dynamiques accessibles dans toute la pipeline | Clés/valeurs fournies par l'utilisateur lors du démarrage de la pipeline |
+| **Portée**                  | Peut être global ou local à une étape spécifique              | Global à la pipeline, accessible via `params.<paramètre>`   |
+| **Exemple d'utilisation**   | Chemins système, clés d'API, configurations dynamiques        | Branches Git, flags de déploiement, choix d'environnement   |
+| **Interaction utilisateur** | Aucune interaction directe avec l'utilisateur                 | Interaction avant l'exécution pour personnaliser les builds |
+| **Modification**            | Modifiable uniquement dans le Jenkinsfile                    | Modifiable par l'utilisateur lors de l'exécution            |
+
+### Cas d'usage :
+- **Environnement** : Si vous avez besoin de gérer des informations spécifiques à l'environnement d'exécution (comme des clés API ou des chemins de répertoires), ou si vous devez configurer des informations qui changent en fonction du système ou de la plateforme.
+- **Paramètres** : Si vous souhaitez que l'utilisateur puisse interagir avec la pipeline (par exemple, choisir une branche à déployer, activer ou désactiver certaines fonctionnalités lors du lancement du job).
+
+Ces deux concepts sont souvent utilisés ensemble pour rendre les pipelines plus dynamiques et flexibles. Par exemple, un utilisateur pourrait sélectionner un paramètre qui définit l'environnement (`DEV`, `QA`, `PROD`), et en fonction de cette sélection, Jenkins pourrait configurer certaines variables d'environnement spécifiques à cet environnement choisi.
+
+Dans les pipelines Jenkins, les **variables globales** jouent un rôle crucial pour gérer l'état et les informations d'exécution. Elles sont accessibles dans tous les pipelines, et certaines sont générées automatiquement par Jenkins ou par les plugins que tu utilises. Voici un aperçu des principales variables globales mentionnées dans ta question :
+
+
+
+
+### 3. **`currentBuild`** (État de l'exécution actuelle)
+
+La variable **`currentBuild`** fournit des informations sur l'état de l'exécution en cours du pipeline. Elle est très utile pour gérer les étapes de notification ou pour ajuster le comportement du pipeline en fonction de son résultat ou de son statut courant.
+
+#### Propriétés utiles de `currentBuild` :
+- **`currentBuild.result`** : Le résultat du build actuel (par exemple, `SUCCESS`, `FAILURE`, `UNSTABLE`, etc.).
+- **`currentBuild.displayName`** : Le nom à afficher pour cette exécution.
+- **`currentBuild.duration`** : La durée d'exécution du pipeline.
+- **`currentBuild.number`** : Numéro de l'exécution actuelle (souvent utilisé pour les identifiants de builds).
+
+#### Exemples d'utilisation :
+- **Afficher le résultat d'une exécution** :
+  ```groovy
+  echo "Le résultat actuel du build est : ${currentBuild.result}"
+  ```
+- **Changer le nom affiché de l'exécution** :
+  ```groovy
+  currentBuild.displayName = "#${currentBuild.number} - Mon Build"
+  ```
+- **Condition en fonction du résultat** :
+  ```groovy
+  if (currentBuild.result == 'FAILURE') {
+      echo "Le build a échoué"
+  }
+  ```
+
+### 4. **Accéder à la documentation des variables globales**
+
+Ces variables globales ne sont pas exhaustives, et Jenkins peut fournir davantage de variables en fonction des plugins installés ou des besoins spécifiques du pipeline. Pour obtenir une liste complète et à jour de toutes les variables globales, tu peux consulter la **Global Variable Reference** intégrée à Jenkins. Tu y accèdes en visitant l'URL suivante :
+```
+http://YOUR_JENKINS_URL/pipeline-syntax/globals
+```
+Cela te permet de voir toutes les variables qui sont actuellement disponibles dans ton environnement Jenkins.
+
+### Résumé
+
+- **`env`** : Accède aux variables d'environnement du système.
+- **`params`** : Fournit les paramètres définis pour le pipeline.
+- **`currentBuild`** : Offre des informations sur l'état de l'exécution en cours (résultat, durée, numéro).
+- **Global Variable Reference** : Liste toutes les variables globales accessibles, dépendantes des plugins installés et du contexte Jenkins.
+
+Ces variables sont particulièrement utiles pour écrire des pipelines dynamiques, configurables et qui réagissent aux résultats ou aux paramètres d'exécution.
+
+
+
+
+## Pousser l'artefact .jar sur nexus via maven
+
+
+Pour filtrer et ne pousser sur Nexus que l'artefact qui se termine par `-runner.jar`, tu peux ajuster la configuration de Maven pour spécifier explicitement quel artefact doit être déployé. Voici deux approches pour y parvenir :
+
+
+### 1. **Utiliser la commande `mvn deploy:deploy-file`**
+Si tu ne veux pas modifier ton `pom.xml`, tu peux directement utiliser la commande `mvn deploy:deploy-file` dans ta pipeline pour ne déployer que l'artefact qui se termine par `-runner.jar`.
+
+Voici la commande que tu pourrais utiliser dans ton script de pipeline Jenkins :
+
+```bash
+mvn deploy:deploy-file \
+    -Dfile=target/${project.artifactId}-runner.jar \
+    -DrepositoryId=nexus \
+    -Durl=http://nexus-repo.it4innov.fr/repository/maven-snapshots/ \
+    -DgroupId=${project.groupId} \
+    -DartifactId=${project.artifactId} \
+    -Dversion=${project.version} \
+    -Dpackaging=jar
+```
+
+### Explication :
+- **`-Dfile`** : Spécifie le chemin vers le fichier à déployer (l'artefact `-runner.jar`).
+- **`-DrepositoryId` et `-Durl`** : Référence au dépôt Nexus où l'artefact sera poussé.
+- **`-DgroupId`, `-DartifactId`, `-Dversion`** : Ces options fournissent les informations nécessaires à Nexus pour organiser correctement l'artefact dans le dépôt.
+
+### Intégration dans ta pipeline :
+Dans ta pipeline Jenkins, tu pourrais mettre quelque chose comme ceci :
+
+```groovy
+pipeline {
+    agent {
+        docker { image 'maven:3.9.3-eclipse-temurin-17' }
+    }
+    stages {
+        stage('Checkout project') {
+            steps {
+                git branch: 'develop', url: 'https://github.com/christus2024/mkutano-frontend.git'
+            }
+        }
+        stage('Build and Deploy') {
+            steps {
+                sh 'mvn clean install'
+                sh '''
+                    mvn deploy:deploy-file \
+                    -Dfile=target/${project.artifactId}-runner.jar \
+                    -DrepositoryId=nexus \
+                    -Durl=http://nexus-repo.it4innov.fr/repository/maven-snapshots/ \
+                    -DgroupId=${project.groupId} \
+                    -DartifactId=${project.artifactId} \
+                    -Dversion=${project.version} \
+                    -Dpackaging=jar
+                '''
+            }
+        }
+    }
+}
+```
+
+Cette approche garantit que seul l'artefact se terminant par `-runner.jar` sera déployé sur Nexus.
+
+2. Utiliser la commande maven tout simplement
+
+Cette commande permet de pousser tout le contenu du repertoire target sur notre repo nexus
+Pipeline Jenkins avec la configuration dans le pom.xml :
+
+```groovy
+    pipeline {
+        agent {
+            docker { image 'maven:3.9.3-eclipse-temurin-17' }
+        }
+        stages {
+            stage('Checkout project') {
+                steps {
+                    git branch: 'develop', url: 'https://github.com/christus2024/mkutano-frontend.git'
+                }
+            }
+            stage('Build') {
+                steps {
+                    sh 'mvn clean install'
+                }
+            }
+            stage('Deploy Runner Jar') {
+                steps {
+                    // Cette commande déclenche l'exécution du plugin `maven-deploy-plugin` défini dans le pom.xml
+                    sh 'mvn deploy --settings ./.m2/settings.xml'
+                }
+            }
+        }
+    }
+```
+
+
+## 3. **Utiliser le plugin `maven-deploy-plugin` avec un classifier**
+Tu peux configurer le plugin `maven-deploy-plugin` dans ton `pom.xml` pour ne pousser que les fichiers qui correspondent à un certain modèle, par exemple ceux qui se terminent par `-runner.jar`.
+
+Voici un exemple de configuration du plugin dans ton `pom.xml` pour déployer uniquement les fichiers avec un classifier `runner` :
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <version>3.0.0-M1</version>
+            <executions>
+                <execution>
+                    <id>default-deploy</id>
+                    <phase>deploy</phase>
+                    <goals>
+                        <goal>deploy-file</goal>
+                    </goals>
+                    <configuration>
+                        <file>${project.build.directory}/${project.artifactId}-runner.jar</file>
+                        <repositoryId>nexus</repositoryId>
+                        <url>http://nexus-repo.it4innov.fr/repository/maven-snapshots/</url>
+                        <groupId>${project.groupId}</groupId>
+                        <artifactId>${project.artifactId}</artifactId>
+                        <version>${project.version}</version>
+                        <classifier>runner</classifier>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+```
+
+### Explication :
+- **`<file>`** : Le chemin vers l'artefact spécifique que tu veux déployer (`-runner.jar`).
+- **`<classifier>`** : Tu peux définir un classifier (`runner` ici) pour spécifier cet artefact particulier. Cela permet d'identifier cet artefact comme étant distinct des autres artefacts du projet.
+- **`<repositoryId>` et `<url>`** : Les informations de ton dépôt Nexus.
+
+Ensuite, tu peux exécuter la commande `mvn deploy` comme d'habitude, et seul l'artefact spécifié (celui avec `-runner.jar`) sera déployé sur Nexus.
+
+
+Points à noter :
+mvn deploy : Cette commande exécute le plugin maven-deploy-plugin que tu as défini dans le pom.xml. Elle déploiera l'artefact -runner.jar uniquement, selon la configuration du plugin.
+--settings ./.m2/settings.xml : Continue d'utiliser ton fichier settings.xml pour les informations d'authentification et les dépôts.
+Avantages de cette méthode :
+Déploiement automatisé : Le déploiement est géré directement dans le cycle de vie Maven, ce qui signifie que tu n'as plus besoin d'une commande spécifique pour filtrer les artefacts.
+Configuration centralisée : La configuration du déploiement est centralisée dans le pom.xml, ce qui peut simplifier la maintenance du projet.
+
+
+Si tu as déjà configuré le déploiement des **snapshots** et **releases** dans des dépôts distincts via la section `distributionManagement` de ton `pom.xml`, et que tu veux maintenant filtrer pour ne déployer que l'artefact qui se termine par `-runner.jar`, il faut ajuster la manière dont Maven déploie cet artefact spécifique.
+
+
+### Solution :
+1. **Définir statiquement l'URL dans le `pom.xml`** (version simplifiée sans condition dynamique).
+2. **Utiliser le profil Maven pour gérer les dépôts SNAPSHOT et RELEASE** (c'est une pratique courante).
+
+### Option 1 : Configuration statique de l'URL dans le `pom.xml`
+
+Tu peux définir l'URL du dépôt de manière statique, en utilisant soit le dépôt de `SNAPSHOT`, soit celui de `RELEASE`, selon tes besoins. Voici un exemple pour les snapshots :
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <version>3.0.0-M1</version>
+            <executions>
+                <execution>
+                    <id>deploy-runner-jar</id>
+                    <phase>deploy</phase>
+                    <goals>
+                        <goal>deploy-file</goal>
+                    </goals>
+                    <configuration>
+                        <file>${project.build.directory}/${project.artifactId}-runner.jar</file>
+                        <repositoryId>nexus</repositoryId>
+                        <url>http://nexus-repo.it4innov.fr/repository/maven-snapshots/</url> <!-- URL statique -->
+                        <groupId>${project.groupId}</groupId>
+                        <artifactId>${project.artifactId}</artifactId>
+                        <version>${project.version}</version>
+                        <packaging>jar</packaging>
+                        <classifier>runner</classifier>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+```
+
+Dans cet exemple, l'URL est définie de manière statique pour utiliser le dépôt de `SNAPSHOT`. Si tu déploies une release, change simplement l'URL pour le dépôt des releases.
+
+### Option 2 : Utiliser les profils pour gérer les dépôts SNAPSHOT et RELEASE
+
+Voici une manière plus élégante de gérer les déploiements pour les `SNAPSHOT` et `RELEASE` en utilisant des **profils Maven**. Ce mécanisme permet de choisir dynamiquement le dépôt approprié sans essayer de mettre une logique conditionnelle directement dans l'URL.
+
+1. **Définir des profils dans le `pom.xml` pour les snapshots et les releases**.
+
+```xml
+<profiles>
+    <profile>
+        <id>release-profile</id>
+        <activation>
+            <activeByDefault>false</activeByDefault>
+            <property>
+                <name>!revision</name>
+            </property>
+        </activation>
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>3.0.0-M1</version>
+                    <executions>
+                        <execution>
+                            <id>deploy-runner-jar-release</id>
+                            <phase>deploy</phase>
+                            <goals>
+                                <goal>deploy-file</goal>
+                            </goals>
+                            <configuration>
+                                <file>${project.build.directory}/${project.artifactId}-runner.jar</file>
+                                <repositoryId>nexus</repositoryId>
+                                <url>http://nexus-repo.it4innov.fr/repository/mkutano-repo/</url>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>${project.artifactId}</artifactId>
+                                <version>${project.version}</version>
+                                <packaging>jar</packaging>
+                                <classifier>runner</classifier>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </build>
+    </profile>
+
+    <profile>
+        <id>snapshot-profile</id>
+        <activation>
+            <activeByDefault>false</activeByDefault>
+            <property>
+                <name>revision</name>
+            </property>
+        </activation>
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>3.0.0-M1</version>
+                    <executions>
+                        <execution>
+                            <id>deploy-runner-jar-snapshot</id>
+                            <phase>deploy</phase>
+                            <goals>
+                                <goal>deploy-file</goal>
+                            </goals>
+                            <configuration>
+                                <file>${project.build.directory}/${project.artifactId}-runner.jar</file>
+                                <repositoryId>nexus</repositoryId>
+                                <url>http://nexus-repo.it4innov.fr/repository/maven-snapshots/</url>
+                                <groupId>${project.groupId}</groupId>
+                                <artifactId>${project.artifactId}</artifactId>
+                                <version>${project.version}</version>
+                                <packaging>jar</packaging>
+                                <classifier>runner</classifier>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </build>
+    </profile>
+</profiles>
+```
+
+2. **Adapter la pipeline Jenkins** pour activer le bon profil lors du déploiement.
+
+- Si tu veux déployer un `SNAPSHOT`, tu actives le `snapshot-profile` :
+
+```groovy
+pipeline {
+    agent {
+        docker { image 'maven:3.9.3-eclipse-temurin-17' }
+    }
+    stages {
+        stage('Checkout project') {
+            steps {
+                git branch: 'develop', url: 'https://github.com/christus2024/mkutano-frontend.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+        stage('Deploy Runner Jar') {
+            steps {
+                sh 'mvn deploy -P snapshot-profile --settings ./.m2/settings.xml'
+            }
+        }
+    }
+}
+```
+
+- Si tu veux déployer une release, tu actives le `release-profile` :
+
+```groovy
+pipeline {
+    agent {
+        docker { image 'maven:3.9.3-eclipse-temurin-17' }
+    }
+    stages {
+        stage('Checkout project') {
+            steps {
+                git branch: 'develop', url: 'https://github.com/christus2024/mkutano-frontend.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+        stage('Deploy Runner Jar') {
+            steps {
+                sh 'mvn deploy -P release-profile --settings ./.m2/settings.xml'
+            }
+        }
+    }
+}
+```
+
+### Résumé :
+- L'erreur est causée par l'absence d'URL correcte dans la configuration du plugin.
+- Utilise une approche plus statique pour l'URL du dépôt, ou bien utilise les profils Maven pour déployer dynamiquement dans les dépôts de snapshots ou de releases.
+- Adapte ta pipeline Jenkins pour activer le profil approprié lors du déploiement (snapshot ou release).
+
+Cela devrait résoudre le problème de l'URL manquante tout en t'offrant une manière flexible de gérer les déploiements de `SNAPSHOT` et de `RELEASE`.
+
+
+
+## Shared library
+
+lien tutoriel cloudbeesTV
+https://www.youtube.com/watch?v=Wj-weFEsTb0
+https://www.youtube.com/watch?v=eV7roTXrEqg
+https://www.youtube.com/watch?v=PjvFNoRwT_A&list=PLHHEEVNAb4l2q1RXbBpydW8T45TFubtml&index=15
+
+lien du repo git avec les exemples de shared libray
+https://github.com/darinpope/github-api-global-lib
+
+
+Defining global variables
+Internally, scripts in the vars directory are instantiated on-demand as singletons. This allows multiple methods to be defined in a single .groovy file for convenience. For example:
+
+vars/log.groovy
+def info(message) {
+    echo "INFO: ${message}"
+}
+
+def warning(message) {
+    echo "WARNING: ${message}"
+}
+Jenkinsfile
+@Library('utils') _
+
+log.info 'Starting'
+log.warning 'Nothing to do!'
+Declarative Pipeline does not allow method calls on objects outside "script" blocks. (JENKINS-42360). The method calls above would need to be put inside a script directive:
+
+Jenkinsfile
+@Library('utils') _
+
+pipeline {
+    agent none
+    stages {
+        stage ('Example') {
+            steps {
+                // log.info 'Starting'
+                script {
+                    log.info 'Starting'
+                    log.warning 'Nothing to do!'
+                }
+            }
+        }
+    }
+}
+This method call would fail because it is outside a script directive.
+script directive required to access global variables in Declarative Pipeline.

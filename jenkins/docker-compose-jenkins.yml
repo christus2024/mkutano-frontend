@@ -1,0 +1,21 @@
+version: '3'
+services:
+  jenkins:
+    image: christus/costum-jenkins
+    build: ./jenkins
+    ports:
+      - 9081:8080
+      - 50000:50000
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - jenkins-data:/var/jenkins_home
+    environment:
+      - JAVA_OPTS=-Dhudson.footerURL=http://jenkins.it4innov.fr
+  network:
+    - it4innov-lab
+volumes:
+  - jenkins-data
+networks:
+  it4innov-lab:
+    driver: bridge
