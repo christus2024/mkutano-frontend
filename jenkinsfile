@@ -27,7 +27,7 @@ pipeline {
         stage('archive') {
 
             steps {
-                sh 'mvn deploy --settings ./.m2/settings.xml'
+                sh 'mvn deploy -P release-profile --settings ./.m2/settings.xml'
 
 
             }
