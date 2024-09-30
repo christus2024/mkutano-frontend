@@ -27,9 +27,18 @@ pipeline {
         stage('archive') {
 
             steps {
-                sh 'mvn deploy -P release-profile --settings ./.m2/settings.xml'
+                //sh 'mvn deploy -P release-profile --settings ./.m2/settings.xml'
 
-
+                sh '''
+                    mvn deploy:deploy-file
+                        -Dfile=target/${project.artifactId}-runner.jar
+                        -DrepositoryId=nexus
+                        -Durl=http://nexus-repo.it4innov.fr/repository/maven-snapshots/
+                        -DgroupId=${project.groupId}
+                        -DartifactId=${project.artifactId}
+                        -Dversion=${project.version}
+                        -Dpackaging=jar
+                    '''
             }
         }
     }
