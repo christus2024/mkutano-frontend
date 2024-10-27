@@ -1,45 +1,98 @@
 pipeline {
     agent {
-                docker { image 'maven:3.9.3-eclipse-temurin-17'
-                args '-v $HOME/.m2:/root/.m2' }
-            }
+        docker { image 'maven:3.9.3-eclipse-temurin-17'
+            args '-v $HOME/.m2:/root/.m2' }
+    }
+    environment {
+        GIT_URL = 'https://github.com/christus2024/mkutano-frontend.git'
+        TZ = 'Europe/paris'
+    }
+    parameters {
+            string(name: 'releaseVersion', defaultValue: "${params[releaseVersion]}", description: 'Version de release')
+            string(name: 'snapshotVersion', defaultValue: "${params[snapshotVersion]}",description: 'Version de snapshot')
+            booleanParam(name:'isRelease', defaultValue: false, description: 'Build de release ?')
+    }
+    //Valid option types for options: [authorizationMatrix, buildDiscarder, catchError, checkoutToSubdirectory, disableConcurrentBuilds,
+     //disableRestartFromStage, disableResume, dockerNode, durabilityHint, githubProjectProperty, newContainerPerStage,
+      //overrideIndexTriggers, parallelsAlwaysFailFast, preserveStashes, quietPeriod, rateLimitBuilds, retry, script,
+      //skipDefaultCheckout, skipStagesAfterUnstable, timeout, timestamps, waitUntil, warnError, withChecks, withContext,
+     //withCredentials, withEnv, wrap, ws]
+    options{
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '5'))
+    }
+
     stages {
         stage('Checkout project') {
-
             steps {
-
-                git branch: 'develop', url:'https://github.com/christus2024/mkutano-frontend.git'
-
+                echo "GIT_BRANCH:  ${GIT_BRANCH}"
+                echo "BRANCH_NAME:  ${BRANCH_NAME}"
+                git branch: env.BRANCH_NAME, url: env.GIT_URL
             }
         }
-        stage('Test') {
-
+        stage('Validate inputs') {
+            steps {
+                script {
+                    if (params.isRelease && (!params.releaseVersion || !params.snapshotVersion)) {
+                        error "Les versions de release et de snapshot sont nécessaires pour un build de release."
+                    }
+                }
+                echo "releaseVersion:  ${params.releaseVersion}"
+                echo "snapshotVersion:  ${params.snapshotVersion}"
+                echo "isRelease:  ${params.isRelease}"
+            }
+        }
+        stage('Test and Build') {
             steps {
                 sh 'mvn clean verify'
             }
         }
          stage('Build') {
-
             steps {
-                sh 'mvn package'
+                script {
+                    if (params.isRelease) {
+                        println 'Construction de la release'
+                        // 1. Modifier la version dans le pom.xml
+                        sh "mvn versions:set -DnewVersion=${params.releaseVersion}"
+
+                        // 2. Ajouter et commit le changement de version
+                        sh '''
+                            git add pom.xml
+                            git commit -m "[jenkins-commit] Update project version to ${params.releaseVersion}"
+                        '''
+                         println 'Construction de la release éffectuée'
+
+                         // 3. Continuer avec le packaging
+                         sh 'mvn  package'
+
+                         println 'Mise à jour de la version de developpement'
+                         // 4. Modifier la version dans le pom.xml
+                        sh "mvn versions:set -DnewVersion=${params.snapshotVersion}"
+
+                        // 5. Ajouter et commit le changement de version
+                        sh '''
+                            git add pom.xml
+                            git commit -m "[jenkins-commit] Update project version to ${params.snapshotVersion}"
+                        '''
+                    } else {
+                    //Continuer avec le packaging
+                    sh 'mvn  package'
+                    }
+                }
+            }
+         }
+        stage('Archive') {
+            steps {
+                script {
+                    def profile = params.isRelease ? 'release-profile' : 'snapshot-profile'
+                    sh "mvn deploy -P ${profile} --settings ./.m2/settings.xml"
+                }
             }
         }
-        stage('archive') {
-
-            steps {
-                //sh 'mvn deploy -P release-profile --settings ./.m2/settings.xml'
-
-                sh '''
-                    mvn deploy:deploy-file
-                        -Dfile=target/${project.artifactId}-runner.jar
-                        -DrepositoryId=nexus
-                        -Durl=http://nexus-repo.it4innov.fr/repository/maven-snapshots/
-                        -DgroupId=${project.groupId}
-                        -DartifactId=${project.artifactId}
-                        -Dversion=${project.version}
-                        -Dpackaging=jar
-                    '''
-            }
+    }
+    post {
+        always {
+            cleanWs()
         }
     }
 }
