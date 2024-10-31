@@ -25,9 +25,9 @@ pipeline {
     stages {
         stage('Checkout project') {
             steps {
-                echo "GIT_BRANCH:  ${GIT_BRANCH}"
+                echo "GIT_BRANCH:  ${env.GIT_BRANCH}" // Ajout de 'env.' pour plus de clarté
                 echo "BRANCH_NAME:  ${BRANCH_NAME}"
-                git branch: env.BRANCH_NAME, url: env.GIT_URL
+                git branch: env.BRANCH_NAME, url: env.GIT_URL, credentialsId: "mkutano_project"
             }
         }
         stage('Validate inputs') {
@@ -96,3 +96,10 @@ pipeline {
         }
     }
 }
+
+
+// TODO ajouter un utilisateur jenkins au projet
+// configurer les profiles snapshot et release pour les pusher les artefacts sur nexus
+// Deployer sonar et harbord et configurer l'analyse de qualité
+// Installer trivy et configurer l'analyse de vulnerabilité
+// installer le plugin owaps dans le code et configurer le scan sur la branche developpement
