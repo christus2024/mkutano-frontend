@@ -36,10 +36,15 @@ pipeline {
                     if (params.isRelease && (!params.releaseVersion || !params.snapshotVersion)) {
                         error "Les versions de release et de snapshot sont nécessaires pour un build de release."
                     }
+                    sh 'git status'
+                    sh 'git branch'
+                    sh 'git add pom.xml'
+
+                    echo "releaseVersion:  ${params.releaseVersion}"
+                    echo "snapshotVersion:  ${params.snapshotVersion}"
+                    echo "isRelease:  ${params.isRelease}"
                 }
-                echo "releaseVersion:  ${params.releaseVersion}"
-                echo "snapshotVersion:  ${params.snapshotVersion}"
-                echo "isRelease:  ${params.isRelease}"
+
             }
         }
         stage('Test and Build') {
@@ -56,10 +61,9 @@ pipeline {
                         sh "mvn versions:set -DnewVersion=${params.releaseVersion}"
 
                         // 2. Ajouter et commit le changement de version
-                        sh '''
-                            git add pom.xml
-                            git commit -m "[jenkins-commit] Update project version to ${params.releaseVersion}"
-                        '''
+                        sh 'git add pom.xml'
+                       // sh "git commit -m \"[jenkins-commit] Update project version to ${params.releaseVersion}\""
+
                          println 'Construction de la release éffectuée'
 
                          // 3. Continuer avec le packaging
@@ -67,13 +71,12 @@ pipeline {
 
                          println 'Mise à jour de la version de developpement'
                          // 4. Modifier la version dans le pom.xml
-                        sh "mvn versions:set -DnewVersion=${params.snapshotVersion}"
+                         sh "mvn versions:set -DnewVersion=${params.snapshotVersion}"
 
                         // 5. Ajouter et commit le changement de version
-                        sh '''
-                            git add pom.xml
-                            git commit -m "[jenkins-commit] Update project version to ${params.snapshotVersion}"
-                        '''
+                        sh 'git add pom.xml'
+                        sh "git commit -m \"[jenkins-commit] Update project version to ${params.snapshotVersion}\""
+
                     } else {
                     //Continuer avec le packaging
                     sh 'mvn  package'
@@ -91,6 +94,7 @@ pipeline {
         }
     }
     post {
+
         always {
             cleanWs()
         }
