@@ -122,8 +122,8 @@ pipeline {
                     // Remplacez <your-image-name> et <path-to-dockerfile> par vos valeurs
                     def pom = readFile(POM_FILE)
                     def imageName = params.isRelease ? " ${pom.artifactId}:${params.releaseVersion}" : "${pom.artifactId}:${params.snapshotVersion}"
-
-                    sh "docker build -t ${imageName} -f <path-to-dockerfile> ."
+                    println "imageName: ${imageName}"
+                    sh "docker build -t ${imageName} -f dockerfile ."
                 }
             }
         }
