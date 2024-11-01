@@ -171,6 +171,30 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.owasp</groupId>
+        <artifactId>dependency-check-maven</artifactId>
+        <version>7.0.0</version> <!-- Vérifie que tu utilises la dernière version -->
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <!-- Optionnel : Configurer les détails ici -->
+          <outputDirectory>${project.build.directory}/dependency-check-report</outputDirectory>
+          <!-- Échoue si une vulnérabilité de CVSS >= 7 est trouvée -->
+          <failBuildOnCVSS>9</failBuildOnCVSS>
+          <!-- Formats des rapports -->
+          <formats>
+            <!--<format>HTML</format>
+            <format>JSON</format>-->
+            <format>ALL</format>
+          </formats>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <profiles>

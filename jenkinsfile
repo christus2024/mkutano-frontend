@@ -56,6 +56,16 @@ pipeline {
                 sh 'mvn clean verify'
             }
         }
+        stage('Check Dependencies') {
+            when {
+                expression { env.BRANCH_NAME == 'develop' }
+            }
+            steps {
+                echo "Vérification des dépendances..."
+
+                sh 'mvn dependency-check:check'
+            }
+        }
          stage('Build') {
             steps {
                 script {
