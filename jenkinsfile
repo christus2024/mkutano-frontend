@@ -9,6 +9,7 @@ pipeline {
         GIT_CREDENTIAL_ID = 'mkutano_project'
         TZ = 'Europe/Paris'
         POM_FILE = 'pom.xml'
+        RELEASE_VERSION_FILE = 'versions.txt' // Nom du fichier pour stocker les versions
     }
     parameters {
             string(name: 'releaseVersion', defaultValue: "${params[releaseVersion]}", description: 'Version de release', trim: true)
@@ -26,6 +27,31 @@ pipeline {
     }
 
     stages {
+        stage('Validate inputs') {
+            steps {
+                script {
+                    try{
+                        if (params.isRelease && (!params.releaseVersion || !params.snapshotVersion)) {
+                            error "Les versions de release et de snapshot sont nécessaires pour un build de release."
+                            currentBuild.result = 'FAILURE'
+                        }
+                        sh 'git status'
+                        sh 'git branch'
+                        echo "releaseVersion:  ${params.releaseVersion}"
+                        echo "snapshotVersion:  ${params.snapshotVersion}"
+                        echo "isRelease:  ${params.isRelease}"
+                        sh '''
+                            sudo apt-get update
+                            sudo apt-get install -y docker.io
+                           '''
+                    } catch(error){
+                        error("erreur lors de la validation des inputs: ${error}")
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
+
+            }
+        }
         stage('Checkout project') {
             steps {
                 echo "GIT_BRANCH:  ${env.GIT_BRANCH}" // Ajout de 'env.' pour plus de clarté
@@ -38,26 +64,7 @@ pipeline {
 
             }
         }
-        stage('Validate inputs') {
-            steps {
-                script {
-                    if (params.isRelease && (!params.releaseVersion || !params.snapshotVersion)) {
-                        error "Les versions de release et de snapshot sont nécessaires pour un build de release."
-                        currentBuild.result = 'FAILURE'
-                    }
-                    sh 'git status'
-                    sh 'git branch'
-                    echo "releaseVersion:  ${params.releaseVersion}"
-                    echo "snapshotVersion:  ${params.snapshotVersion}"
-                    echo "isRelease:  ${params.isRelease}"
-                    sh '''
-                        apt-get update
-                        apt-get install -y docker.io
-                       '''
-                }
 
-            }
-        }
         stage('Test') {
             steps {
                 // Utilisez catchError pour gérer les erreurs de tests et faire echouer la pipeline si les tests echouent
@@ -135,6 +142,12 @@ pipeline {
         stage('Preparation de la version de dev'){
             steps{
                 script{
+                    println 'Écrire la version de la release dans le fichier'
+                    def releaseVersion = params.releaseVersion
+                    echo "Enregistrement de la version de release: ${releaseVersion}"
+                    sh "echo ${releaseVersion} >> ${VERSION_FILE}"
+                    echo "Versions disponibles pour le déploiement :"
+                    sh "cat ${VERSION_FILE}"
                     println 'Mise à jour de la version de developpement'
                     // 4. Modifier la version dans le pom.xml
                     sh "mvn versions:set -DnewVersion=${params.snapshotVersion}"
