@@ -5,11 +5,12 @@ pipeline {
     }
     environment {
         GIT_URL = 'https://github.com/christus2024/mkutano-frontend.git'
-        TZ = 'Europe/paris'
+        GIT_CREDENTIAL_ID = 'mkutano_project'
+        TZ = 'Europe/Paris'
     }
     parameters {
-            string(name: 'releaseVersion', defaultValue: "${params[releaseVersion]}", description: 'Version de release')
-            string(name: 'snapshotVersion', defaultValue: "${params[snapshotVersion]}",description: 'Version de snapshot')
+            string(name: 'releaseVersion', defaultValue: "${params[releaseVersion]}", description: 'Version de release', trim: true)
+            string(name: 'snapshotVersion', defaultValue: "${params[snapshotVersion]}",description: 'Version de snapshot', trim: true)
             booleanParam(name:'isRelease', defaultValue: false, description: 'Build de release ?')
     }
     //Valid option types for options: [authorizationMatrix, buildDiscarder, catchError, checkoutToSubdirectory, disableConcurrentBuilds,
@@ -27,7 +28,12 @@ pipeline {
             steps {
                 echo "GIT_BRANCH:  ${env.GIT_BRANCH}" // Ajout de 'env.' pour plus de clarté
                 echo "BRANCH_NAME:  ${BRANCH_NAME}"
-                git branch: env.BRANCH_NAME, url: env.GIT_URL, credentialsId: "mkutano_project"
+                script{
+                    sh 'git config --local user.email christus.tchassi@it4innov.fr'
+                    sh 'git config --local user.name it4innov'
+                }
+                git branch: env.BRANCH_NAME, url: env.GIT_URL, credentialsId: env.GIT_CREDENTIAL_ID
+
             }
         }
         stage('Validate inputs') {
@@ -38,8 +44,6 @@ pipeline {
                     }
                     sh 'git status'
                     sh 'git branch'
-                    sh 'git add pom.xml'
-
                     echo "releaseVersion:  ${params.releaseVersion}"
                     echo "snapshotVersion:  ${params.snapshotVersion}"
                     echo "isRelease:  ${params.isRelease}"
@@ -47,9 +51,69 @@ pipeline {
 
             }
         }
-    }
+        stage('Test') {
+            steps {
+                sh 'mvn clean verify'
+            }
+        }
+         stage('Build') {
+            steps {
+                script {
+                    try{
+                        if (params.isRelease) {
+                            println 'Construction de la release'
+                            // 1. Modifier la version dans le pom.xml
+                            sh "mvn versions:set -DnewVersion=${params.releaseVersion}"
 
+                            // 2. Ajouter et commit le changement de version
+                            sh 'git add pom.xml'
+                            sh "git commit -m \"[jenkins-commit] Update project version to ${params.releaseVersion}\""
+
+                            // 3. Continuer avec le packaging
+                            sh 'mvn  package'
+
+
+                        } else {
+                            //Continuer avec le packaging
+                            sh 'mvn  package'
+                        }
+                        println 'Construction de la release éffectuée'
+                    } catch (exception){
+                        error "Echec du build"
+                    }
+
+                }
+            }
+         }
+        stage('Archive') {
+            steps {
+                script {
+                    def profile = params.isRelease ? 'release-profile' : 'snapshot-profile'
+                    sh "mvn deploy -P ${profile} --settings ./.m2/settings.xml"
+
+                    println 'Mise à jour de la version de developpement'
+                    // 4. Modifier la version dans le pom.xml
+                    sh "mvn versions:set -DnewVersion=${params.snapshotVersion}"
+
+                    // 5. Ajouter et commit le changement de version
+                    sh 'git add pom.xml'
+                    sh "git commit -m \"[jenkins-commit] Update project version to ${params.snapshotVersion}\""
+                    withCredentials([usernamePassword(credentialsId: env.GIT_CREDENTIAL_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                         sh "git push --set-upstream origin ${BRANCH_NAME}"
+                    }
+
+                }
+            }
+        }
+    }
+    //post {
+
+     //   always {
+     //       cleanWs()
+     //   }
+  //  }
 }
+
 
 // TODO ajouter un utilisateur jenkins au projet
 // configurer les profiles snapshot et release pour les pusher les artefacts sur nexus
