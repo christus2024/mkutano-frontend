@@ -115,7 +115,7 @@ pipeline {
 
         stage('Build Docker Image') {
             agent {
-                docker { image 'docker:latest' }
+                docker { image 'docker:19.03.12-dind' }
             }
             steps {
                 script {
