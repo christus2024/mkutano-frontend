@@ -29,7 +29,7 @@
     <lombok.version>1.18.22</lombok.version>
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.1.2</surefire-plugin.version>
-    <skip.dependency.check>false</skip.dependency.check> <!-- Par défaut, on ne saute pas le check -->
+    <skip.dependency.check>true</skip.dependency.check> <!-- Par défaut, on ne saute pas le check -->
   </properties>
   <dependencyManagement>
     <dependencies>

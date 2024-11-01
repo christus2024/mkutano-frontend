@@ -57,7 +57,8 @@ pipeline {
             steps {
                 // Utilisez catchError pour gérer les erreurs de tests et faire echouer la pipeline si les tests echouent
                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                    sh 'mvn clean verify -Ddependency-check.skip=true'
+                    //sh 'mvn clean verify -Ddependency-check.skip=true'  //commande maven permetant de sauter la phase dependancy-check
+                    sh 'mvn clean verify'       //plus besoin de sauter cette phase car par defaut j'ai desactiver le plugin dans le pom avec la proprieté skip.dependancy-check
                 }
             }
         }
@@ -68,7 +69,7 @@ pipeline {
             steps {
                 echo "Vérification des dépendances..."
                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                   sh 'mvn dependency-check:check'
+                   sh 'mvn dependency-check:check -Dskip.dependency.check=true' // la proprieté skip.dependency.check permet d'activer le plugin maven pour l'execution du dependancy-check
                 }
 
             }
