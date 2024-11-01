@@ -7,6 +7,7 @@ pipeline {
         GIT_URL = 'https://github.com/christus2024/mkutano-frontend.git'
         GIT_CREDENTIAL_ID = 'mkutano_project'
         TZ = 'Europe/Paris'
+        POM_FILE = 'pom.xml'
     }
     parameters {
             string(name: 'releaseVersion', defaultValue: "${params[releaseVersion]}", description: 'Version de release', trim: true)
@@ -41,6 +42,7 @@ pipeline {
                 script {
                     if (params.isRelease && (!params.releaseVersion || !params.snapshotVersion)) {
                         error "Les versions de release et de snapshot sont nécessaires pour un build de release."
+                        currentBuild.result = 'FAILURE'
                     }
                     sh 'git status'
                     sh 'git branch'
@@ -53,7 +55,10 @@ pipeline {
         }
         stage('Test') {
             steps {
-                sh 'mvn clean verify'
+                // Utilisez catchError pour gérer les erreurs de tests et faire echouer la pipeline si les tests echouent
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                    sh 'mvn clean verify -Ddependency-check.skip=true'
+                }
             }
         }
         stage('Check Dependencies') {
@@ -62,8 +67,10 @@ pipeline {
             }
             steps {
                 echo "Vérification des dépendances..."
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                   sh 'mvn dependency-check:check'
+                }
 
-                sh 'mvn dependency-check:check'
             }
         }
          stage('Build') {
@@ -90,6 +97,7 @@ pipeline {
                         println 'Construction de la release éffectuée'
                     } catch (exception){
                         error "Echec du build"
+                        currentBuild.result = 'FAILURE'
                     }
 
                 }
@@ -100,7 +108,27 @@ pipeline {
                 script {
                     def profile = params.isRelease ? 'release-profile' : 'snapshot-profile'
                     sh "mvn deploy -P ${profile} --settings ./.m2/settings.xml"
+                }
+            }
+        }
 
+        stage('Build Docker Image') {
+            agent {
+                docker { image 'docker:latest' }
+            }
+            steps {
+                script {
+                    // Remplacez <your-image-name> et <path-to-dockerfile> par vos valeurs
+                    def pom = readFile(POM_FILE)
+                    def imageName = params.isRelease ? " ${pom.artifactId}:${params.releaseVersion}" : "${pom.artifactId}:${params.snapshotVersion}"
+
+                    sh "docker build -t ${imageName} -f <path-to-dockerfile> ."
+                }
+            }
+        }
+        stage('Preparation de la version de dev'){
+            steps{
+                script{
                     println 'Mise à jour de la version de developpement'
                     // 4. Modifier la version dans le pom.xml
                     sh "mvn versions:set -DnewVersion=${params.snapshotVersion}"
@@ -108,10 +136,9 @@ pipeline {
                     // 5. Ajouter et commit le changement de version
                     sh 'git add pom.xml'
                     sh "git commit -m \"[jenkins-commit] Update project version to ${params.snapshotVersion}\""
-                    withCredentials([usernamePassword(credentialsId: env.GIT_CREDENTIAL_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                         sh "git push --set-upstream origin ${BRANCH_NAME}"
-                    }
-
+                   // withCredentials([usernamePassword(credentialsId: env.GIT_CREDENTIAL_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                   //      sh "git push --set-upstream origin ${BRANCH_NAME}"
+                  //  }
                 }
             }
         }

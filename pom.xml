@@ -29,6 +29,7 @@
     <lombok.version>1.18.22</lombok.version>
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.1.2</surefire-plugin.version>
+    <skip.dependency.check>false</skip.dependency.check> <!-- Par défaut, on ne saute pas le check -->
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -177,13 +178,16 @@
         <version>7.0.0</version> <!-- Vérifie que tu utilises la dernière version -->
         <executions>
           <execution>
+            <id>dependency-check</id>
             <goals>
               <goal>check</goal>
             </goals>
+            <phase>validate</phase> <!-- Liaison à une phase qui se trouve apres le verify -->
           </execution>
         </executions>
         <configuration>
           <!-- Optionnel : Configurer les détails ici -->
+          <skip>${skip.dependency.check}</skip> <!-- Conditionner l'exécution -->
           <outputDirectory>${project.build.directory}/dependency-check-report</outputDirectory>
           <!-- Échoue si une vulnérabilité de CVSS >= 7 est trouvée -->
           <failBuildOnCVSS>9</failBuildOnCVSS>
