@@ -47,60 +47,9 @@ pipeline {
 
             }
         }
-        stage('Test and Build') {
-            steps {
-                sh 'mvn clean verify'
-            }
-        }
-         stage('Build') {
-            steps {
-                script {
-                    if (params.isRelease) {
-                        println 'Construction de la release'
-                        // 1. Modifier la version dans le pom.xml
-                        sh "mvn versions:set -DnewVersion=${params.releaseVersion}"
-
-                        // 2. Ajouter et commit le changement de version
-                        sh 'git add pom.xml'
-                       // sh "git commit -m \"[jenkins-commit] Update project version to ${params.releaseVersion}\""
-
-                         println 'Construction de la release éffectuée'
-
-                         // 3. Continuer avec le packaging
-                         sh 'mvn  package'
-
-                         println 'Mise à jour de la version de developpement'
-                         // 4. Modifier la version dans le pom.xml
-                         sh "mvn versions:set -DnewVersion=${params.snapshotVersion}"
-
-                        // 5. Ajouter et commit le changement de version
-                        sh 'git add pom.xml'
-                        sh "git commit -m \"[jenkins-commit] Update project version to ${params.snapshotVersion}\""
-
-                    } else {
-                    //Continuer avec le packaging
-                    sh 'mvn  package'
-                    }
-                }
-            }
-         }
-        stage('Archive') {
-            steps {
-                script {
-                    def profile = params.isRelease ? 'release-profile' : 'snapshot-profile'
-                    sh "mvn deploy -P ${profile} --settings ./.m2/settings.xml"
-                }
-            }
-        }
     }
-    post {
 
-        always {
-            cleanWs()
-        }
-    }
 }
-
 
 // TODO ajouter un utilisateur jenkins au projet
 // configurer les profiles snapshot et release pour les pusher les artefacts sur nexus
