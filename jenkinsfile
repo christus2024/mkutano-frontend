@@ -2,10 +2,11 @@ pipeline {
     agent none
     environment {
         GIT_URL = 'https://github.com/christus2024/mkutano-frontend.git'
-        GIT_CREDENTIAL_ID = 'mkutano_project'
+        GIT_CREDENTIAL_ID = 'github_mkutano_project_token'
         TZ = 'Europe/Paris'
         POM_FILE = 'pom.xml'
         RELEASE_VERSION_FILE = 'versions.txt' // Nom du fichier pour stocker les versions
+        DOCKER_IMAGE = ''
     }
     parameters {
             string(name: 'releaseVersion', defaultValue: "${params[releaseVersion]}", description: 'Version de release', trim: true)
@@ -53,7 +54,7 @@ pipeline {
                 echo "BRANCH_NAME:  ${BRANCH_NAME}"
                 script{
                     sh 'git config --local user.email christus.tchassi@it4innov.fr'
-                    sh 'git config --local user.name it4innov'
+                    sh 'git config --local user.name christus2024'
                 }
                 git branch: env.BRANCH_NAME, url: env.GIT_URL, credentialsId: env.GIT_CREDENTIAL_ID
 
@@ -102,6 +103,8 @@ pipeline {
                     try{
                         if (params.isRelease) {
                             println 'Construction de la release'
+                            // Assure que le HEAD est attaché à la branche cible
+                            sh "git checkout ${BRANCH_NAME}"
                             // 1. Modifier la version dans le pom.xml
                             sh "mvn versions:set -DnewVersion=${params.releaseVersion}"
 
@@ -109,15 +112,31 @@ pipeline {
                             sh 'git add pom.xml'
                             sh "git commit -m \"[jenkins-commit] Update project version to ${params.releaseVersion}\""
 
+                            /* withCredentials([usernamePassword(credentialsId: env.GIT_CREDENTIAL_ID,
+                               usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]){
+                                def encodedPass = URLEncoder.encode(GIT_PASS, "UTF-8")
+                                sh "git push http://$GIT_USER:$encodedPass@github.com/christus2024/mkutano-frontend.git ${env.BRANCH_NAME}"
+                            } */
+                            println 'Écrire la version de la release dans le fichier'
+                            echo "Enregistrement de la version de release: ${params.releaseVersion} dans le fichier ${RELEASE_VERSION_FILE}"
+                            echo "${params.releaseVersion} >> ${RELEASE_VERSION_FILE}"
+                             withCredentials([string(credentialsId: env.GIT_CREDENTIAL_ID, variable: 'GIT_TOKEN')]){
+                                sh 'git config --local user.email christus.tchassi@it4innov.fr'
+                                sh 'git config --local user.name christus2024'
+
+                               BRANCH_NAME = "${env.BRANCH_NAME}"
+                               sh 'git push https://$GIT_TOKEN@github.com/christus2024/mkutano-frontend.git  ' + BRANCH_NAME
+                           }
                             // 3. Continuer avec le packaging
                             sh 'mvn  package'
-
-
                         } else {
                             //Continuer avec le packaging
                             sh 'mvn  package'
                         }
-                        println 'Construction de la release éffectuée'
+                        // Archive les fichiers générés
+                        stash name: 'code-frontend', includes: '**/*'
+
+                        println 'Construction de la release éffectuée avec succes'
                     } catch (exception){
                         error "Echec du build"
                         currentBuild.result = 'FAILURE'
@@ -134,26 +153,65 @@ pipeline {
                 }
             steps {
                 script {
+                    //sh "git checkout -B ${GIT_BRANCH} origin/${GIT_BRANCH}"
+                    //sh 'git pull'
+                    unstash 'code-frontend' // Copie des fichiers archivés dans le répertoire de travail
                     def profile = params.isRelease ? 'release-profile' : 'snapshot-profile'
                     sh "mvn deploy -P ${profile} --settings ./.m2/settings.xml"
+                    // Archive les fichiers générés
+                    stash name: 'code-frontend', includes: '**/*'
+
                 }
             }
         }
 
         stage('Build Docker Image') {
             agent {
-                docker { image 'docker:19.03.12-dind' }
+                docker {
+                    image 'docker:19.03.12-dind'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock' // Monter le socket Docker
+
+                 }
             }
             steps {
                 script {
                     // Remplacez <your-image-name> et <path-to-dockerfile> par vos valeurs
-                    def pom = readFile(POM_FILE)
+                    //code-frontend-123.23.12-runner.jar
+
+                    unstash 'code-frontend' // Copie des fichiers archivés dans le répertoire de travail
+
+                    def pom = readMavenPom(file: POM_FILE)
+                    def version = params.isRelease ? "${params.releaseVersion}" : "${params.snapshotVersion}"
                     def imageName = params.isRelease ? " ${pom.artifactId}:${params.releaseVersion}" : "${pom.artifactId}:${params.snapshotVersion}"
+                    env.DOCKER_IMAGE = imageName
                     println "imageName: ${imageName}"
-                    sh "docker build -t ${imageName} -f dockerfile ."
+                    sh "docker build --build-arg VERSION=${version} -t ${imageName} -f dockerfile ."
+                    // Archive les fichiers générés
+                    stash name: 'code-frontend', includes: '**/*'
                 }
             }
         }
+        stage('Trivy Scan') {
+            agent {
+                docker {
+                    image 'aquasec/trivy:latest' // Utiliser l'image Trivy
+                    args '-v /var/run/docker.sock:/var/run/docker.sock' // Monter le socket Docker
+                }
+            }
+            steps {
+                // Exécuter l'analyse Trivy sur l'image Docker construite
+                sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${env.DOCKER_IMAGE}"
+            }
+        }
+        stage('Docker Push') {
+              agent any
+              steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
+                  sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
+                  sh 'docker push shanem/spring-petclinic:latest'
+                }
+              }
+            }
         stage('Preparation de la version de dev'){
             agent {
                 docker { image 'maven:3.9.3-eclipse-temurin-17'
@@ -162,22 +220,29 @@ pipeline {
             }
             steps{
                 script{
-                    println 'Écrire la version de la release dans le fichier'
-                    def releaseVersion = params.releaseVersion
-                    echo "Enregistrement de la version de release: ${releaseVersion}"
-                    sh "echo ${releaseVersion} >> ${VERSION_FILE}"
-                    echo "Versions disponibles pour le déploiement :"
-                    sh "cat ${VERSION_FILE}"
+
+                    unstash 'code-frontend'
+                    sh "git checkout -B ${GIT_BRANCH} origin/${GIT_BRANCH}"
                     println 'Mise à jour de la version de developpement'
                     // 4. Modifier la version dans le pom.xml
                     sh "mvn versions:set -DnewVersion=${params.snapshotVersion}"
 
                     // 5. Ajouter et commit le changement de version
+
                     sh 'git add pom.xml'
                     sh "git commit -m \"[jenkins-commit] Update project version to ${params.snapshotVersion}\""
-                   // withCredentials([usernamePassword(credentialsId: env.GIT_CREDENTIAL_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                   //      sh "git push --set-upstream origin ${BRANCH_NAME}"
-                  //  }
+
+                    /* withCredentials([usernamePassword(credentialsId: 'git-credentials',
+                       usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')])
+                        {def encodedPass = URLEncoder.encode(GIT_PASS, "UTF-8")
+                        sh "git push http://$GIT_USER:$encodedPass@github.com/christus2024/mkutano-frontend.git ${env.BRANCH_NAME}" }
+                    } */
+                    withCredentials([string(credentialsId: env.GIT_CREDENTIAL_ID, variable: 'GIT_TOKEN')]){
+                        sh 'git config --local user.email christus.tchassi@it4innov.fr'
+                        sh 'git config --local user.name christus2024'
+                        BRANCH_NAME = "${env.BRANCH_NAME}"
+                        sh 'git push https://$GIT_TOKEN@github.com/christus2024/mkutano-frontend.git  ' + BRANCH_NAME
+                   }
                 }
             }
         }
