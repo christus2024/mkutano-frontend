@@ -1,9 +1,5 @@
 pipeline {
-    agent {
-        docker { image 'maven:3.9.3-eclipse-temurin-17'
-            args '-v $HOME/.m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock'
-            }
-    }
+    agent none
     environment {
         GIT_URL = 'https://github.com/christus2024/mkutano-frontend.git'
         GIT_CREDENTIAL_ID = 'mkutano_project'
@@ -28,6 +24,7 @@ pipeline {
 
     stages {
         stage('Validate inputs') {
+            agent any
             steps {
                 script {
                     try{
@@ -40,10 +37,7 @@ pipeline {
                         echo "releaseVersion:  ${params.releaseVersion}"
                         echo "snapshotVersion:  ${params.snapshotVersion}"
                         echo "isRelease:  ${params.isRelease}"
-                        sh '''
-                            sudo apt-get update
-                            sudo apt-get install -y docker.io
-                           '''
+
                     } catch(error){
                         error("erreur lors de la validation des inputs: ${error}")
                         currentBuild.result = 'FAILURE'
@@ -53,6 +47,7 @@ pipeline {
             }
         }
         stage('Checkout project') {
+            agent any
             steps {
                 echo "GIT_BRANCH:  ${env.GIT_BRANCH}" // Ajout de 'env.' pour plus de clarté
                 echo "BRANCH_NAME:  ${BRANCH_NAME}"
@@ -66,6 +61,11 @@ pipeline {
         }
 
         stage('Test') {
+            agent {
+                    docker { image 'maven:3.9.3-eclipse-temurin-17'
+                        args '-v $HOME/.m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock'
+                        }
+                }
             steps {
                 // Utilisez catchError pour gérer les erreurs de tests et faire echouer la pipeline si les tests echouent
                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
@@ -78,6 +78,11 @@ pipeline {
             when {
                 expression { env.BRANCH_NAME == 'develop' }
             }
+            agent {
+                    docker { image 'maven:3.9.3-eclipse-temurin-17'
+                        args '-v $HOME/.m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock'
+                        }
+                }
             steps {
                 echo "Vérification des dépendances..."
                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
@@ -87,6 +92,11 @@ pipeline {
             }
         }
          stage('Build') {
+            agent {
+                    docker { image 'maven:3.9.3-eclipse-temurin-17'
+                        args '-v $HOME/.m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock'
+                        }
+                }
             steps {
                 script {
                     try{
@@ -117,6 +127,11 @@ pipeline {
             }
          }
         stage('Archive') {
+            agent {
+                    docker { image 'maven:3.9.3-eclipse-temurin-17'
+                        args '-v $HOME/.m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock'
+                        }
+                }
             steps {
                 script {
                     def profile = params.isRelease ? 'release-profile' : 'snapshot-profile'
@@ -140,6 +155,11 @@ pipeline {
             }
         }
         stage('Preparation de la version de dev'){
+            agent {
+                docker { image 'maven:3.9.3-eclipse-temurin-17'
+                    args '-v $HOME/.m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock'
+                    }
+            }
             steps{
                 script{
                     println 'Écrire la version de la release dans le fichier'
