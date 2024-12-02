@@ -6,7 +6,7 @@ IDE visual studio code installé
 maven installé
     
     sudo apt-get install maven
-    mvn -version 3.8.7
+    mvn -version      # 3.8.7
 
 version de java installée
     
@@ -31,8 +31,7 @@ Creons le compte de service
 
     ssh root@85.215.129.28
 
-    groupadd christus
-    useradd christus --home /home/myasso/ --create-home -g christus --shell /bin/bash
+    useradd christus --home /home/christus/ --create-home  --shell /bin/bash
     usermod -aG sudo christus
     passwd christus
 
@@ -96,6 +95,9 @@ copier le contenu du repertoire infra/nginx/data vers les repertoire corespondan
 
     scp -i ~/.ssh/christus_rsa -r infra/nginx/data/* christus@85.215.129.28:~/nginx/
     ssh -i ~/.ssh/christus_rsa christus@85.215.129.28 'mkdir -p ~/docker-compose/'
+     ssh -i ~/.ssh/christus_rsa christus@85.215.129.28 'mkdir -p ~/nginx/conf.d/'
+      ssh -i ~/.ssh/christus_rsa christus@85.215.129.28 'mkdir -p ~/nginx/data_site/'
+      ssh -i ~/.ssh/christus_rsa christus@85.215.129.28 'mkdir -p ~/nginx/log/'
     scp -i ~/.ssh/christus_rsa -r infra/nginx/docker-compose-nginx.yml christus@85.215.129.28:~/docker-compose/docker-compose-nginx.yml
 
 Connexion au serveur distant pour executer notre conteneur
@@ -112,7 +114,6 @@ Consulter les conteneurs lancer à partir du fichier docker-compose
    
     docker-compose -f docker-compose-nginx.yml ps
 
-
 ## Etape 2
 
 clonner le projet
@@ -128,12 +129,22 @@ Build de l'image docker
     
     docker build -t code-frontend:1.0.0 --build-arg VERSION=1.0.0-SNAPSHOT .
 
+Tag du conteneur avec mon compte docker hub
+
+    docker tag code-frontend:1.0.0 christus/code-frontend:1.0.0
+
+
 
 ## Etape 3
 
-Connexion au registry docker hub
+Creation du token docker hub pour la connexion au registry
+Pour cela il faut se rendre sur le registry dockerhub et s'y connecter. 
+cliquer sur le profil et aller sur account setting ->> Personal access tokens ->> Generate new token
+Reseigner le nom du token et les access en lecture/ ecriture sur le repo. Pousi generer le token
+
+Connexion au registry docker hub avec mon token generé
  
-    docker login -u christus -p dckr_pat_RpXGxTgv6gowU4qVKVamRGb8h5Y
+    docker login -u christus -p 
 
 push de l'image sur le repository docker hub
 
@@ -153,6 +164,19 @@ connexion au serveur
 Execution du conteneur
     
     docker-compose -f docker-compose/docker-compose-code-frontend.yml up -d
+
+
+Configuration du virtualhost
+la configuration du virtualhost pour notre serveur se trouve dans le repertoire suivant:infra/nginx/data/conf.d/code-frontend.conf
+nous alons le copier sur le serveur dans le repertoire de configuration de nginx
+
+    scp -i ~/.ssh/christus_rsa  infra/nginx/data/conf.d/code-frontend.conf christus@85.215.129.28:~/nginx/conf.d/code-frontend.conf
+
+en suite nous nous connectons sur le serveur et nous redemarrons nginx
+
+    ssh -i ~/.ssh/christus_rsa  christus@85.215.129.28
+    docker stop nginx
+    docker start nginx
 
 ## Etape 6
 

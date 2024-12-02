@@ -5,19 +5,19 @@
     <repository>
       <id>nexus</id>
       <name>Releases</name>
-      <url>http://nexus-repo.it4innov.fr/repository/mkutano-repo/</url>
+      <url>http://localhost:9096/repository/it4innov-release/</url>
     </repository>
     <snapshotRepository>
       <id>nexus</id>
       <name>Snapshot</name>
-      <url>http://nexus-repo.it4innov.fr/repository/maven-snapshots/</url>
+      <url>http://localhost:9096/repository/it4innov-snapshot/</url>
     </snapshotRepository>
   </distributionManagement>
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.it4innov</groupId>
   <artifactId>code-frontend</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.1.0</version>
   <properties>
     <compiler-plugin.version>3.11.0</compiler-plugin.version>
     <maven.compiler.release>17</maven.compiler.release>
@@ -25,7 +25,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>3.4.1</quarkus.platform.version>
+    <quarkus.platform.version>3.13.3</quarkus.platform.version>
     <lombok.version>1.18.22</lombok.version>
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.1.2</surefire-plugin.version>
