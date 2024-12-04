@@ -1,0 +1,6 @@
+# Ensure any folder exists
+- name: Check docker-compose folder exists
+  file:
+    path: /home/christus/docker-compose
+    state: directory
+    owner: docker

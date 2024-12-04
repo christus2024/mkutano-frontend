@@ -1,0 +1,12 @@
+# Vérification des pré-requis nécessaires au déploiement
+- include_tasks: requirement.yml
+
+# Installation des configurations
+- include_tasks: install.yml
+
+
+# Démarrages des services
+- include_tasks: run.yml
+
+# Vérification de l'installation
+- include_tasks: healthcheck.yml

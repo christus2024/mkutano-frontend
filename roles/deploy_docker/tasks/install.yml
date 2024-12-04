@@ -1,0 +1,62 @@
+# if container already deployed then stop,rm and rmi
+- name: Get infos on container before stop
+  community.docker.docker_container_info:
+    name: "{{ docker.container.name }}"
+  register: result
+
+- name: Print the status of the container
+  debug:
+    msg: "The container {{ docker.container.name }} status is {{ result.container['State']['Status'] }} and image used is {{ result.container['Config']['Image'] }}"
+  when:
+    - result.exists
+
+- name: Stop a container
+  community.docker.docker_container:
+    name: "{{ docker.container.name }}"
+    state: stopped
+  when:
+    - result.exists
+    - result.container['State']['Status'] == "running" or result.container['State']['Status'] == "restarting"
+
+- name: Get infos on container before remove
+  community.docker.docker_container_info:
+    name: "{{ docker.container.name }}"
+  register: result
+
+- name: Print the status of the container
+  debug:
+    msg: "The container status is {{ result.container['State']['Status'] }} and image used is {{ result.container['Config']['Image'] }}"
+  when:
+    - result.exists
+
+- name: Remove container
+  community.docker.docker_container:
+    name: "{{ docker.container.name }}"
+    state: absent
+  when:
+    - result.exists
+    - result.container['State']['Status'] == "exited"
+
+- name: Remove image previously pulled
+  community.docker.docker_image:
+    state: absent
+    name: "{{ result.container['Config']['Image'] }}"
+  when:
+    - result.exists
+    - result.container['Config']['Image'] != ""
+
+#Copy 'docker-compose.yml' file
+- name: Copy docker-compose-{{ docker.container.name }}.yml file from template
+  template:
+    src: 'templates/docker-compose-{{ docker.container.name }}.yml'
+    dest: '/home/christus/docker-compose/'
+    mode: 0600
+
+# Pull Docker image from registry
+- name: Pull Docker image
+  community.docker.docker_image:
+    name: "{{ docker.image.fullname }}"
+    tag: "{{ docker.image.tag }}"
+    source: pull
+    state: present
+    force_tag: yes

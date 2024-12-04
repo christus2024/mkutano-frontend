@@ -1,0 +1,20 @@
+docker:
+  container:
+    name: code-frontend
+    restart: always
+    user: christus
+    port:
+  image:
+    fullname: christus/code-frontend
+    tag: 1.7.6-SNAPSHOT
+
+application:
+  name: code-frontend
+  backendapi:
+    host:
+    port:
+  environnement: DEV
+
+quarkus:
+  log:
+    level: INFO

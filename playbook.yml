@@ -1,0 +1,6 @@
+#  Playbook de déploiement du conteneur Docker code-frontend
+- name: Déployement de l'application code-frontend
+  hosts: server-frontal
+  remote_user: christus
+  roles:
+    - deploy_docker

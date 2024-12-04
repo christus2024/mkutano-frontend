@@ -1,0 +1,11 @@
+# Start all services
+- name: start
+  command: "/home/docker/BOOT"
+
+# Stop all services
+- name: stop
+  command: "/home/docker/SHUT"
+
+# Restart all services
+- name: restart
+  command: "/home/docker/RESTART"

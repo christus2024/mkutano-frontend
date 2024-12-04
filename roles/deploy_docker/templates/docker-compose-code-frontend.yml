@@ -1,0 +1,26 @@
+---
+version: '3.3'
+
+services:
+  code-frontend:
+    security_opt:
+      - seccomp:unconfined
+    image: "{{ docker.image.fullname }}:{{ docker.image.tag }}"
+    container_name: code-frontend
+    restart: {{ docker.container.restart }}
+    user: "{{ docker.container.userid }}:{{ docker.container.groupid }}"
+    ports:
+      - {{ docker.container.port }}:{{ docker.container.port  }}
+    environment:
+      - ENVIRONNEMENT={{ application.environnement }}
+      - APPLICATION_NAME={{ application.name }}
+      - CODE_BACKEND_API_HOST={{ application.backendapi.host }}
+      - CODE_BACKEND_API_PORT={{ application.backendapi.port }}
+      - LOG_LEVEL={{ quarkus.log.level }}
+    networks:
+      - it4innov-lab
+networks:
+  it4innov-lab:
+    driver: bridge
+
+

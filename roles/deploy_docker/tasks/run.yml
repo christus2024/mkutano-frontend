@@ -1,0 +1,7 @@
+# Start all services
+- name: start
+  shell: "docker-compose -f {{ item }} up -d"
+  args:
+    chdir: /home/christus
+  with_items:
+    - "/home/christus/docker-compose/docker-compose-code-frontend.yml"
